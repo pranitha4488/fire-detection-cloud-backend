@@ -1,0 +1,97 @@
+"""Application settings.
+
+Every field here is env-driven so that switching from the local prototype to a
+real Azure deployment is a configuration change, not a code change. See
+``.env.example`` for the local-vs-Azure meaning of each value.
+"""
+from __future__ import annotations
+
+from functools import lru_cache
+from pathlib import Path
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Repo root = two levels up from this file (backend/core/config.py -> repo root).
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=str(REPO_ROOT / ".env"),
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+    # LOCAL STAND-IN FOR: Azure SQL Database.
+    database_url: str = "sqlite:///./local.db"
+
+    # LOCAL STAND-IN FOR: Azure Blob Storage.
+    storage_path: str = "./storage"
+
+    # Response-plan LLM.  mock | local | gemini
+    #   mock   -> deterministic "[MOCK LLM OUTPUT]" (no key, CI/offline)
+    #   local  -> small local transformers model, else mock
+    #   gemini -> Google Gemini Flash via GEMINI_API_KEY (real generation)
+    # (Azure OpenAI would be a fourth 'azure' branch once that key exists.)
+    llm_mode: str = "mock"
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-2.5-flash"
+
+    # Embedding backend.  auto (sentence-transformers) | hash (offline fallback)
+    embed_mode: str = "auto"
+
+    # Edge detector backend.  auto (ultralytics COCO placeholder) | finetuned | stub
+    #   finetuned -> ai/models/weights/wildfire_yolov8n.pt (FireNet-trained)
+    yolo_mode: str = "auto"
+    finetuned_weights: str = "./ai/models/weights/wildfire_yolov8n.pt"
+
+    # Blob backend.  local (filesystem stand-in) | azure (azure-storage-blob)
+    storage_mode: str = "local"
+    azure_storage_connection_string: str = ""
+    azure_storage_account_url: str = ""  # for the Managed-Identity path
+    azure_blob_container: str = "incident-snapshots"
+
+    kb_path: str = "./data/knowledge-base/sample_sops"
+    faiss_index_path: str = "./ai/rag/faiss_index"
+
+    # LOCAL MOCK FOR: Azure Communication Services + Notification Hubs.
+    alert_log_path: str = "./logs/alerts.log"
+
+    # Alert delivery backend.  mock | acs
+    #   mock -> deterministic, logged only (no key, local dev/CI default)
+    #   acs  -> real Azure Communication Services SMS (primary) + Email (fallback)
+    # NOTE: ACS SMS does not support India (+91) as a destination country as of
+    # this writing — see docs/architecture/acs-sms-india-risk.md. Email is the
+    # real, working fallback channel for Indian recipients.
+    alert_mode: str = "mock"
+    acs_connection_string: str = ""
+    acs_sms_sender: str = ""
+    acs_email_sender: str = ""
+    default_alert_phone: str = "+919487038353"
+    default_alert_email: str = ""
+
+    confidence_threshold: float = 0.35
+    sync_rag: bool = False
+    recreate_db: bool = False  # one-shot: drop_all before create_all (schema reset)
+    frontend_origin: str = "http://localhost:5173"
+
+    # Shared secret for write endpoints (POST /incidents, WS /ws/telemetry) and
+    # the read endpoints an operator dashboard uses. Empty (default) means auth
+    # is OFF, for local dev/CI. Set a real value via Azure Key Vault / app
+    # settings in any internet-reachable deployment — see cloud/DEPLOY.md.
+    api_key: str = ""
+
+    # Real-MAVLink telemetry bridge (backend/services/mavlink_ingest.py). Off by
+    # default; the JSON WS at /ws/telemetry is the default ingestion path.
+    mavlink_enabled: bool = False
+    mavlink_endpoint: str = "udp:0.0.0.0:14550"
+
+    # --- resolved absolute paths -------------------------------------------------
+    def abspath(self, value: str) -> Path:
+        p = Path(value)
+        return p if p.is_absolute() else (REPO_ROOT / p)
+
+
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()

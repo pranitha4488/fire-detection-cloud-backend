@@ -1,0 +1,80 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+
+# --- Local runtime artifacts (all are LOCAL STAND-INS for Azure services) ---
+# local.db      -> Azure SQL Database
+# storage/      -> Azure Blob Storage
+# logs/         -> Azure Monitor / alert delivery logs
+# ai/rag/faiss_index/ -> FAISS index build output
+# *.pt          -> downloaded model weights (e.g. yolov8n.pt)
+local.db
+storage/
+logs/
+ai/rag/faiss_index/
+*.pt
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# --- Phase-3: large datasets & training runs (never commit) ---
+*.zip
+data/flame/
+data/firenet/
+runs/
+ai/models/weights/*.pt
+
+# --- Node / React ---
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+
+# --- backup / scratch files ---
+*.bak
+*.tmp
+*.old
+*.orig
+
+# --- personal working docs (not repo deliverables) ---
+Review2_Report.docx
+Review2_Report.pdf
+DEMO_CHEATSHEET.md
+
+# --- results: keep READMEs + .gitkeep + last_run.json, ignore other run outputs ---
+results/yolo-metrics/*
+results/rag-metrics/*
+results/latency/*
+!results/*/.gitkeep
+!results/yolo-metrics/last_run.json
+!results/yolo-metrics/train_*.json
+!results/yolo-metrics/plots/
+!results/yolo-metrics/plots/*.png
+!results/yolo-metrics/plots/*.jpg
+!results/rag-metrics/rag_eval.json
+!results/latency/benchmark.json
+
+# Phase-3 derived dataset dirs
+data/firenet_yolo/
+data/flame_cls/
+
+# Terraform
+cloud/terraform/.terraform/
+cloud/terraform/*.tfstate*
+cloud/terraform/terraform.tfvars
+cloud/terraform/.terraform.lock.hcl
+frontend/.env.production
+cloud/terraform/tfplan
+cloud/terraform/*.tfplan
+cloud/terraform/.sqlpw
